@@ -5,17 +5,17 @@ using System.Net;
 using System.Net.Http;
 using System.Web.Http;
 
-namespace itelec4.ApiControllers
+namespace WebApplication2.ApiControllers
 {
     public class MstCourseController : ApiController
     {
-        Data.ITElec4dbDataContext db = new Data.ITElec4dbDataContext();
+        Data.SampledbDataContext db = new Data.SampledbDataContext();
 
-        [Authorize, HttpGet, Route("api/course/list")]
-        public List<Api_Models.MstCourse_ApiModel> ListCourse()
+        [Authorize, HttpGet, Route("api/student/course/list")]
+        public List<ApiModels.MstCourseModel> ListCourse()
         {
             var courses = from d in db.MstCourses
-                          select new Api_Models.MstCourse_ApiModel
+                          select new ApiModels.MstCourseModel
                           {
                               Id = d.Id,
                               CourseCode = d.CourseCode,
@@ -23,110 +23,52 @@ namespace itelec4.ApiControllers
                           };
 
             return courses.ToList();
+
         }
 
-        [Authorize, HttpGet, Route("api/course/list/{filter}")]
-        public List<Api_Models.MstCourse_ApiModel> ListFilterCourse(String filter)
+        [Authorize, HttpGet, Route("api/student/course/detail/{id}")]
+        public ApiModels.MstCourseModel DetailCourse(String id)
         {
-            var courses = from d in db.MstCourses
-                          where d.Course.ToLower().Contains(filter)
-                          || d.CourseCode.ToLower().Contains(filter)
-                          select new Api_Models.MstCourse_ApiModel
-                          {
-                              Id = d.Id,
-                              CourseCode = d.CourseCode,
-                              Course = d.Course
-                          };
+            var course = from d in db.MstCourses
+                         where d.Id == Convert.ToInt32(id)
+                         select new ApiModels.MstCourseModel
+                         {
+                             Id = d.Id,
+                             CourseCode = d.CourseCode,
+                             Course = d.Course
+                         };
 
-            return courses.ToList();
-        }
-
-        [Authorize, HttpGet, Route("api/course/groupdata")]
-        public List<Api_Models.GroupCourseModel> ListGroupCourse()
-        {
-            var courses = from d in db.MstCourses
-                          select new Api_Models.MstCourse_ApiModel
-                          {
-                              Id = d.Id,
-                              CourseCode = d.CourseCode,
-                              Course = d.Course
-                          };
-
-            var groupCourses = from p in courses
-                               group p by p.CourseCode into g
-                               select new Api_Models.GroupCourseModel
-                               {
-                                   Course = g.Key,
-                                   Total = g.Key.Count()
-                               };
-
-            return groupCourses.ToList();
-        }
-
-
-
-
-        [Authorize, HttpGet, Route("api/course/filter/{filterString}")]
-        public List<Api_Models.MstCourse_ApiModel> FilterGetCourse(String filterString)
-        {
-            var courses = from d in db.MstCourses
-                          where d.Course.ToLower() == filterString.ToLower()
-                          select new Api_Models.MstCourse_ApiModel
-                          {
-                              Id = d.Id,
-                              CourseCode = d.CourseCode,
-                              Course = d.Course
-                          };
-
-            return courses.ToList();
-        }
-
-        [Authorize, HttpGet, Route("api/course/detail/{id}")]
-        public Api_Models.MstCourse_ApiModel DetailCourse(String id)
-        {
-
-            var courses = from d in db.MstCourses
-                          where d.Id == Convert.ToInt32(id)
-                          select new Api_Models.MstCourse_ApiModel
-                          {
-                              Id = d.Id,
-                              CourseCode = d.CourseCode,
-                              Course = d.Course
-                          };
-
-            return courses.FirstOrDefault();
+            return course.FirstOrDefault();
         }
 
         [Authorize, HttpPost, Route("api/course/add")]
-        public HttpResponseMessage AddCourse(Api_Models.MstCourse_ApiModel objCourse)
+        public HttpResponseMessage AddCourse(ApiModels.MstCourseModel objCourse)
         {
             try
             {
-
                 Data.MstCourse newCourse = new Data.MstCourse
                 {
                     CourseCode = objCourse.CourseCode,
                     Course = objCourse.Course
                 };
-
                 db.MstCourses.InsertOnSubmit(newCourse);
                 db.SubmitChanges();
 
                 return Request.CreateResponse(HttpStatusCode.OK);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                return Request.CreateResponse(HttpStatusCode.InternalServerError, e.Message);
+                return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
             }
         }
 
         [Authorize, HttpPut, Route("api/course/update/{id}")]
-        public HttpResponseMessage UpdateCourse(Api_Models.MstCourse_ApiModel objCourse, String Id)
+        public HttpResponseMessage UpdateCourse(ApiModels.MstCourseModel objCourse, String id)
         {
             try
             {
                 var course = from d in db.MstCourses
-                             where d.Id == Convert.ToInt32(Id)
+                             where d.Id == Convert.ToInt32(id)
                              select d;
 
                 if (course.Any())
@@ -140,22 +82,22 @@ namespace itelec4.ApiControllers
                 }
                 else
                 {
-                    return Request.CreateResponse(HttpStatusCode.BadRequest, "Course not found!");
+                    return Request.CreateResponse(HttpStatusCode.BadRequest);
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                return Request.CreateResponse(HttpStatusCode.InternalServerError, e.Message);
+                return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
             }
         }
 
         [Authorize, HttpDelete, Route("api/course/delete/{id}")]
-        public HttpResponseMessage DeleteCourse(String Id)
+        public HttpResponseMessage DeleteCourse(String id)
         {
             try
             {
                 var course = from d in db.MstCourses
-                             where d.Id == Convert.ToInt32(Id)
+                             where d.Id == Convert.ToInt32(id)
                              select d;
 
                 if (course.Any())
@@ -167,12 +109,12 @@ namespace itelec4.ApiControllers
                 }
                 else
                 {
-                    return Request.CreateResponse(HttpStatusCode.NotFound, "Course not found!");
+                    return Request.CreateResponse(HttpStatusCode.BadRequest, "Course data not found!");
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                return Request.CreateResponse(HttpStatusCode.InternalServerError, e.Message);
+                return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
             }
         }
     }
